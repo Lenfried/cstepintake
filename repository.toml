@@ -1,0 +1,34 @@
+[repository]
+name = "c-step-intake"
+changelog = "CHANGELOG.md"
+version = "version.txt"
+version_format = "calver"
+container_images_prefix = "ghcr.io/Lenfried/c-step-intake"
+compose = ["docker-compose.yml"]
+
+[repository.towncrier]
+section = "Project"
+settings = "towncrier.toml"
+
+[backend.package]
+name = "c.step.intake"
+path = "backend"
+code_path = "src/c/step/intake"
+changelog = "backend/CHANGELOG.md"
+towncrier_settings = "backend/pyproject.toml"
+base_package = "Products.CMFPlone"
+publish = false
+
+[frontend.package]
+name = "volto-c-step-intake"
+path = "frontend/packages/volto-c-step-intake"
+code_path = "src"
+changelog = "frontend/packages/volto-c-step-intake/CHANGELOG.md"
+towncrier_settings = "frontend/packages/volto-c-step-intake/towncrier.toml"
+base_package = "@plone/volto"
+publish = false
+
+[cookieplone]
+template = "project"
+template_version = "db76a81d89db7ed23d6873e5323bdbfc63cd6197"
+generated_date = "2026-09-26 23:58:09"
