@@ -3,5 +3,6 @@
   <version>1000</version>
   <dependencies>
     <dependency>profile-plone.volto:default</dependency>
+    <dependency>profile-c_step_intake:default</dependency>
   </dependencies>
 </metadata>

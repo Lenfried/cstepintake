@@ -1,0 +1,23 @@
+{
+    "title": "c-step-intake",
+    "description": "A new project using Plone 6.",
+    "project_slug": "c-step-intake",
+    "hostname": "c-step-intake.example.com",
+    "author": "Zihao",
+    "email": "zihao.chen23@login.cuny.edu",
+    "python_package_name": "c.step.intake",
+    "use_prerelease_versions": false,
+    "plone_version": "6.2.2",
+    "feature_headless": true,
+    "volto_version": "19.4.1",
+    "frontend_addon_name": "volto-c-step-intake",
+    "language_code": "en",
+    "github_organization": "Lenfried",
+    "container_registry": "github",
+    "devops_storage": "filestorage",
+    "devops_cache": false,
+    "devops_ansible": false,
+    "devops_gha_deploy": false,
+    "initialize_documentation": true,
+    "__template__": "project"
+}

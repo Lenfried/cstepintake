@@ -24,11 +24,17 @@ A new project using Plone 6.
 1.  Clone this repository, then change your working directory.
 
     ```shell
-    git clone git@github.com:Lenfried/c-step-intake.git
+    git clone git@github.com:Lenfried/cstepintake.git c-step-intake
     cd c-step-intake
     ```
 
-2.  Install this code base.
+2.  Check out the intake add-on into `backend/sources` (see [Intake add-on](#intake-add-on-)).
+
+    ```shell
+    git clone -b rename-to-c-step-intake git@github.com:Lenfried/c-step-intake.git backend/sources/c-step-intake-core
+    ```
+
+3.  Install this code base.
 
     ```shell
     make install
@@ -56,6 +62,94 @@ A new project using Plone 6.
     ```
 
 Voila! Your Plone site should be live and kicking! 🎉
+
+## Intake add-on 📝
+
+The STEP/CSTEP application intake lives in a separate add-on,
+[Lenfried/c-step-intake](https://github.com/Lenfried/c-step-intake) (Python package `c_step_intake`).
+This project consumes it as follows:
+
+- **Checkout:** `backend/sources/c-step-intake-core`, on the `rename-to-c-step-intake` branch.
+  `backend/sources/` is gitignored, so the add-on is not part of this repository.
+- **Wiring:** [`backend/mx.ini`](./backend/mx.ini) registers it with mxdev (`vcs = fs`), and
+  [`backend/pyproject.toml`](./backend/pyproject.toml) installs it in editable mode.
+- **Loading:** [`dependencies.zcml`](./backend/src/c/step/intake/dependencies.zcml) includes its ZCML, and
+  [`metadata.xml`](./backend/src/c/step/intake/profiles/default/metadata.xml) installs `profile-c_step_intake:default` with this project's profile.
+
+The `rename-to-c-step-intake` branch is upstream `master` plus these project-specific changes:
+
+- The distribution is named `c-step-intake-core`, because `c-step-intake` would clash with this project's `c.step.intake` package.
+- It registers through `plone.autoinclude` with `module = c_step_intake`.
+- `global_allow` is `True` for STEP and CSTEP applications, so they can be added anywhere.
+- STEP `cumulative_gpa` has no upper bound.
+
+### Update the add-on
+
+Merge upstream `master` into the branch, keeping the changes above:
+
+```shell
+cd backend/sources/c-step-intake-core
+git fetch origin
+git merge origin/master
+git push origin rename-to-c-step-intake
+```
+
+Code changes take effect without reinstalling. If upstream adds GenericSetup files, such as a new
+`registry.xml`, existing sites need that import step re-run in `portal_setup`, or the site recreated.
+
+### Test the add-on
+
+Run the add-on's tests from `backend`:
+
+```shell
+.venv/bin/python -m pytest sources/c-step-intake-core/src/c_step_intake/tests -q
+```
+
+`make backend-test` runs only this project's tests in `backend/tests`, not the add-on's.
+
+### Try it in Plone
+
+1.  To start from a clean site, recreate it. This deletes all content.
+
+    ```shell
+    cd backend
+    DELETE_EXISTING=1 make create-site
+    ```
+
+2.  Start the backend and frontend as described above, and log in as `admin` / `admin`.
+3.  Add a **STEP Application** and click **Submit**. The automatic check runs, and the application moves to **Manual review**.
+    No accept or reject rules are defined yet, so every complete application goes there.
+4.  Accept, reject, or request more information as an admin, or as a user with the `ProgramDirector` role.
+    Users with the `ProgramStaff` role can review applications but cannot decide them.
+
+CSTEP is off by default. To turn it on, open `portal_setup` at http://localhost:8080/Plone/portal_setup,
+go to the **Import** tab, and import the profile "c_step_intake: CSTEP applications".
+
+### New-application email
+
+The add-on sends one email when an application is **first submitted**.
+Saving drafts, resubmitting, and staff transitions do not send one.
+The recipient is the registry record `c_step_intake.notification_email`.
+Its default is `cstep-n8n@mailings.york.cuny.edu`; leave it empty to turn notifications off.
+Change it at http://localhost:8080/Plone/portal_registry (filter on `c_step_intake`).
+Volto's control panel does not include the registry editor.
+
+Plone needs both an SMTP server and a site "From" address.
+If either is missing, the send fails. The submission still goes through, and the error appears only in the backend log.
+
+For local development, catch mail with [Mailpit](https://mailpit.axllent.org/) (a standalone binary, not a Python package):
+
+```shell
+mailpit --smtp 127.0.0.1:1025 --listen 127.0.0.1:8025
+```
+
+In **Site Setup → Mail** (http://localhost:8080/Plone/@@mail-controlpanel), set:
+
+- **SMTP server:** `localhost`
+- **Port:** `1025`
+- **Site 'From' address:** any address, for example `noreply@example.com`
+
+Messages then appear at http://localhost:8025 instead of being delivered.
 
 ### Local Stack Deployment 📦
 
