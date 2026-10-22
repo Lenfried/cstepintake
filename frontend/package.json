@@ -35,7 +35,8 @@
   "dependencies": {
     "@plone/volto": "workspace:*",
     "@plone/registry": "workspace:*",
-    "volto-c-step-intake": "workspace:*"
+    "volto-c-step-intake": "workspace:*",
+    "volto-c-step-intake-core": "workspace:*"
   },
   "devDependencies": {
     "mrs-developer": "^2.2.0"

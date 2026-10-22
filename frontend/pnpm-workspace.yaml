@@ -3,3 +3,5 @@ packages:
   - 'core/packages/*'
   - 'packages/*'
   - 'packages/**/packages/*'
+  # Volto side of the intake add-on, from its backend checkout (see README)
+  - '../backend/sources/c-step-intake-core/frontend'

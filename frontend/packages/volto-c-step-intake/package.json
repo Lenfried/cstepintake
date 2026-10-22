@@ -26,9 +26,13 @@
     "release-major-alpha": "release-it major --preRelease=alpha",
     "release-alpha": "release-it --preRelease=alpha"
   },
-  "addons": [],
+  "addons": [
+    "volto-c-step-intake-core"
+  ],
   "theme": "",
-  "dependencies": {},
+  "dependencies": {
+    "volto-c-step-intake-core": "workspace:*"
+  },
   "peerDependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0"

@@ -119,10 +119,26 @@ importers:
       volto-c-step-intake:
         specifier: workspace:*
         version: link:packages/volto-c-step-intake
+      volto-c-step-intake-core:
+        specifier: workspace:*
+        version: link:../backend/sources/c-step-intake-core/frontend
     devDependencies:
       mrs-developer:
         specifier: ^2.2.0
         version: 2.3.2
+
+  ../backend/sources/c-step-intake-core/frontend:
+    dependencies:
+      react:
+        specifier: ^18.2.0
+        version: 18.2.0
+      semantic-ui-react:
+        specifier: ^2.1.5
+        version: 2.1.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+    devDependencies:
+      vitest:
+        specifier: ^3.1.2
+        version: 3.2.7(@types/debug@4.1.13)(@types/node@24.19.0)(@vitest/ui@3.2.7)(jiti@2.7.0)(jsdom@28.1.0(@noble/hashes@1.8.0))(less@3.13.1)(lightningcss@1.33.0)(sass@1.58.0)(terser@5.51.2)(yaml@2.9.1)
 
   core/packages/components:
     dependencies:
@@ -1352,6 +1368,9 @@ importers:
       react-dom:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
+      volto-c-step-intake-core:
+        specifier: workspace:*
+        version: link:../../../backend/sources/c-step-intake-core/frontend
     devDependencies:
       '@plone/registry':
         specifier: workspace:*

@@ -75,6 +75,23 @@ This project consumes it as follows:
   [`backend/pyproject.toml`](./backend/pyproject.toml) installs it in editable mode.
 - **Loading:** [`dependencies.zcml`](./backend/src/c/step/intake/dependencies.zcml) includes its ZCML, and
   [`metadata.xml`](./backend/src/c/step/intake/profiles/default/metadata.xml) installs `profile-c_step_intake:default` with this project's profile.
+- **Volto:** the add-on's `frontend/` folder is the Volto add-on `volto-c-step-intake-core`.
+  [`frontend/pnpm-workspace.yaml`](./frontend/pnpm-workspace.yaml) includes it from the same checkout.
+  It is a dependency in [`frontend/package.json`](./frontend/package.json), where Volto's add-on registry resolves it.
+  It is also listed under `addons` in [`volto-c-step-intake`](./frontend/packages/volto-c-step-intake/package.json).
+  After cloning the add-on, run `make frontend-install` (or `pnpm install` in `frontend`) so the package is linked.
+
+### Single-page application forms
+
+STEP and CSTEP add and edit forms show every section on one page, each under its own heading, instead of as tabs.
+Two parts of the add-on do this:
+
+- **Classic UI (:8080):** the add-on's `browser/forms.py` turns form tabbing off.
+- **Volto (:3000):** Volto ignores that setting. It builds forms from the `@types` schema and draws tabs whenever
+  there is more than one fieldset. `volto-c-step-intake-core` merges the fieldsets of these two types into one
+  as the schema arrives, adding a heading field for each section. The backend schema is unchanged.
+
+Other content types keep their tabs. The list of types is `config.settings.cStepIntakeSinglePageFormTypes`.
 
 The `rename-to-c-step-intake` branch is upstream `master` plus these project-specific changes:
 
@@ -106,6 +123,12 @@ Run the add-on's tests from `backend`:
 ```
 
 `make backend-test` runs only this project's tests in `backend/tests`, not the add-on's.
+
+Run the Volto add-on's tests from `frontend`:
+
+```shell
+pnpm --filter volto-c-step-intake-core exec vitest run
+```
 
 ### Try it in Plone
 
