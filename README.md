@@ -93,6 +93,15 @@ Two parts of the add-on do this:
 
 Other content types keep their tabs. The list of types is `config.settings.cStepIntakeSinglePageFormTypes`.
 
+### Eligibility panel
+
+Program staff (Manager, Site Administrator, ProgramDirector, ProgramStaff) see an **Eligibility check** panel
+at the top of each submitted application in Volto. It summarises the latest automatic check:
+each STEP acceptance condition as met / not met / undetermined, using the 2026-2027 NYSED income limits,
+plus an overall conclusion and any missing answers. It never decides an application: every submission goes to staff review.
+Applicants, and drafts, show no panel. The data comes from the add-on's `GET <application>/@eligibility` endpoint.
+See the add-on's `docs/eligibility_rules.md` for the criteria.
+
 The `rename-to-c-step-intake` branch is upstream `master` plus these project-specific changes:
 
 - The distribution is named `c-step-intake-core`, because `c-step-intake` would clash with this project's `c.step.intake` package.
