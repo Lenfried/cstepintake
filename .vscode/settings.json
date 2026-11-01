@@ -13,6 +13,7 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "ruff.organizeImports": true,
+  "git.repositoryScanMaxDepth": 4,
   "python-envs.workspaceSearchPaths": [
     "backend/.venv"
   ],
