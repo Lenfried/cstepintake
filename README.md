@@ -29,9 +29,10 @@ A new project using Plone 6.
     ```
 
 2.  Check out the intake add-on into `backend/sources` (see [Intake add-on](#intake-add-on-)).
+    This step is manual: nothing else fetches the add-on.
 
     ```shell
-    git clone -b rename-to-c-step-intake git@github.com:Lenfried/c-step-intake.git backend/sources/c-step-intake-core
+    git clone git@github.com:Lenfried/c-step-intake.git backend/sources/c-step-intake-core
     ```
 
 3.  Install this code base.
@@ -69,10 +70,13 @@ The STEP/CSTEP application intake lives in a separate add-on,
 [Lenfried/c-step-intake](https://github.com/Lenfried/c-step-intake) (Python package `c_step_intake`).
 This project consumes it as follows:
 
-- **Checkout:** `backend/sources/c-step-intake-core`, on the `rename-to-c-step-intake` branch.
-  `backend/sources/` is gitignored, so the add-on is not part of this repository.
+- **Checkout:** `backend/sources/c-step-intake-core`, on the add-on's `master` branch.
+  `backend/sources/` is gitignored, so the add-on is not part of this repository
+  (see [Why `backend/sources/` is gitignored](#why-backendsources-is-gitignored)).
 - **Wiring:** [`backend/mx.ini`](./backend/mx.ini) registers it with mxdev (`vcs = fs`), and
   [`backend/pyproject.toml`](./backend/pyproject.toml) installs it in editable mode.
+  The distribution is named `c-step-intake-core`, not `c-step-intake`, because Python treats
+  `c-step-intake` and this project's `c.step.intake` as the same name.
 - **Loading:** [`dependencies.zcml`](./backend/src/c/step/intake/dependencies.zcml) includes its ZCML, and
   [`metadata.xml`](./backend/src/c/step/intake/profiles/default/metadata.xml) installs `profile-c_step_intake:default` with this project's profile.
 - **Volto:** the add-on's `frontend/` folder is the Volto add-on `volto-c-step-intake-core`.
@@ -80,6 +84,20 @@ This project consumes it as follows:
   It is a dependency in [`frontend/package.json`](./frontend/package.json), where Volto's add-on registry resolves it.
   It is also listed under `addons` in [`volto-c-step-intake`](./frontend/packages/volto-c-step-intake/package.json).
   After cloning the add-on, run `make frontend-install` (or `pnpm install` in `frontend`) so the package is linked.
+
+### What the add-on does
+
+- **Content types:** STEP and CSTEP applications, with a review workflow. CSTEP is off by default.
+- **Single-page forms** and the staff **eligibility panel** (both below).
+- **School pick-list:** the STEP school is chosen from 1,998 NYSED secondary schools and stored in
+  NYSED reporting format, `NAME  (COUNTY) BEDSCODE`. A "My school isn't listed" choice lets applicants type the name instead;
+  staff should correct those before accepting, since they aren't in reporting format.
+- **STEP acceptance criteria:** the form collects every condition, including a STEM statement and
+  "ward of the State or a county". Each submission is checked against them for staff; nothing is accepted or rejected automatically.
+- **Pre-filled fields:** name and email (and CSTEP's EMPLID, where the login provides it) start filled in from the applicant's account.
+- **New-application email** to staff (below).
+
+The add-on's own README and its `docs/` folder have the details.
 
 ### Single-page application forms
 
@@ -102,23 +120,18 @@ plus an overall conclusion and any missing answers. It never decides an applicat
 Applicants, and drafts, show no panel. The data comes from the add-on's `GET <application>/@eligibility` endpoint.
 See the add-on's `docs/eligibility_rules.md` for the criteria.
 
-The `rename-to-c-step-intake` branch is upstream `master` plus these project-specific changes:
-
-- The distribution is named `c-step-intake-core`, because `c-step-intake` would clash with this project's `c.step.intake` package.
-- It registers through `plone.autoinclude` with `module = c_step_intake`.
-- `global_allow` is `True` for STEP and CSTEP applications, so they can be added anywhere.
-- STEP `cumulative_gpa` has no upper bound.
-
 ### Update the add-on
 
-Merge upstream `master` into the branch, keeping the changes above:
+Pull the add-on's `master`:
 
 ```shell
 cd backend/sources/c-step-intake-core
-git fetch origin
-git merge origin/master
-git push origin rename-to-c-step-intake
+git switch master
+git pull
 ```
+
+Work on the add-on happens on a branch in its own repository, merged into `master` by pull request.
+Everything this project needs is in `master`, so no project-specific branch is kept.
 
 Code changes take effect without reinstalling. If upstream adds GenericSetup files, such as a new
 `registry.xml`, existing sites need that import step re-run in `portal_setup`, or the site recreated.
@@ -149,8 +162,8 @@ pnpm --filter volto-c-step-intake-core exec vitest run
     ```
 
 2.  Start the backend and frontend as described above, and log in as `admin` / `admin`.
-3.  Add a **STEP Application** and click **Submit**. The automatic check runs, and the application moves to **Manual review**.
-    No accept or reject rules are defined yet, so every complete application goes there.
+3.  Add a **STEP Application** and click **Submit**. The automatic check runs, and the application moves to **Manual review**,
+    where the eligibility panel shows the result. Every submission goes there, eligible or not.
 4.  Accept, reject, or request more information as an admin, or as a user with the `ProgramDirector` role.
     Users with the `ProgramStaff` role can review applications but cannot decide them.
 
@@ -182,6 +195,58 @@ In **Site Setup → Mail** (http://localhost:8080/Plone/@@mail-controlpanel), se
 - **Site 'From' address:** any address, for example `noreply@example.com`
 
 Messages then appear at http://localhost:8025 instead of being delivered.
+
+### Why `backend/sources/` is gitignored
+
+`/sources/` is ignored by the Cookieplone project template, not by a choice made here.
+It is where mxdev puts packages listed in `mx.ini` that come from somewhere other than PyPI.
+Each of those is a separate git repository with its own history and its own owners,
+so this repository records **which** package to use (in `mx.ini`), not a copy of its code.
+Committing the folder would duplicate the add-on's code here, and git cannot track a folder
+that contains its own `.git` as ordinary files.
+
+That works when `mx.ini` tells mxdev where to get the package. Here it doesn't:
+the entry uses `vcs = fs`, which means "the package is already on disk, don't fetch it".
+So the only thing that puts the add-on in `backend/sources/` is the manual clone in
+[Installation](#installation-), step 2.
+
+### Why the Docker images and CI don't build ⚠️
+
+Anything that starts from a fresh clone of this repository has no `backend/sources/`, so it has no add-on.
+
+- **CI:** every backend job has failed since the add-on was wired in (2026-10-19).
+  They stop at the same step:
+  `Directory 'sources/c-step-intake-core' for package 'c-step-intake-core' doesn't exist.`
+  The image-build job never runs, because the backend jobs fail first.
+- **Backend image** (`backend/Dockerfile`): the build runs `mxdev -c mx.ini`, then `uv sync`,
+  both of which need `sources/c-step-intake-core`. On a fresh clone it fails the same way as CI.
+  On a machine that has the checkout it can succeed, because the build context is `backend/`
+  and `backend/.dockerignore` does not exclude `sources/`; the image then contains whatever
+  branch that checkout happens to be on.
+- **Frontend image** (`frontend/Dockerfile`): fails everywhere, including on a machine with the checkout.
+  The Volto add-on is linked from `../backend/sources/c-step-intake-core/frontend`, outside the
+  `frontend/` build context, and the Dockerfile copies only `packages/volto-c-step-intake` and the
+  workspace files. `pnpm install` then cannot find the `volto-c-step-intake-core` dependency.
+
+**How to fix it** (not done yet):
+
+1. **Backend:** change the `mx.ini` entry from `vcs = fs` to a git source, as in the commented examples in that file:
+
+   ```ini
+   [c-step-intake-core]
+   url = https://github.com/Lenfried/c-step-intake.git
+   branch = master
+   ```
+
+   mxdev then clones the add-on into `sources/` during `make install`, CI and the image build,
+   and the manual clone step goes away.
+2. **Frontend:** the image build must get the Volto add-on into the `frontend/` build context,
+   either by fetching it during the build (for example cloning the add-on repository and copying its `frontend/` folder
+   into `packages/`) or by publishing `volto-c-step-intake-core` to npm and depending on a version.
+   Local development can keep the link to the backend checkout.
+
+Until then, `make build-images`, `make stack-create-site` and `make stack-start` below do not work:
+the frontend image cannot build on any machine, and the backend image cannot build from a fresh clone.
 
 ### Local Stack Deployment 📦
 
