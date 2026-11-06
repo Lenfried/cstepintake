@@ -57,6 +57,10 @@ services:
       context: ./backend
       args:
         - PLONE_VERSION=${PLONE_VERSION}
+    environment:
+      # Shared secret for the n8n staff-decision webhook. Set it in .env
+      # (git-ignored); it must match the n8n "X-STEP-Token" credential.
+      C_STEP_INTAKE_N8N_WEBHOOK_TOKEN: ${C_STEP_INTAKE_N8N_WEBHOOK_TOKEN:-}
     volumes:
       - vol-site-data:/data
     labels:

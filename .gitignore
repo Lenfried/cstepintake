@@ -6,3 +6,6 @@ node_modules
 
 # Raw NYSED school list; the copy the add-on uses lives in its data/ folder
 /step_school_options.json
+
+# Local secrets for docker compose
+.env

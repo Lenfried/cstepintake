@@ -99,6 +99,10 @@ services:
 
   backend:
     image: ghcr.io/Lenfried/c-step-intake-backend:${STACK_PARAM:-latest}
+    environment:
+      # Shared secret for the n8n staff-decision webhook; supplied by the
+      # deploy environment, never committed. Must match the n8n credential.
+      C_STEP_INTAKE_N8N_WEBHOOK_TOKEN: ${C_STEP_INTAKE_N8N_WEBHOOK_TOKEN:-}
     volumes:
       - vol-site-data:/data
     networks:

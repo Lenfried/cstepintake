@@ -1,0 +1,1 @@
+Staff decisions (accept, reject, request more information) on applications in manual review are now posted to an n8n webhook after commit. Configure `c_step_intake.n8n_webhook_url` and the `C_STEP_INTAKE_N8N_WEBHOOK_TOKEN` environment variable; run the 1001 upgrade step on existing sites.
