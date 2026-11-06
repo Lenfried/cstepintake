@@ -18,6 +18,14 @@ This part of the documentation contains how-to guides, including installation an
 https://diataxis.fr/how-to-guides/
 ```
 
+```{toctree}
+:maxdepth: 1
+
+try-it-in-plone
+new-application-email
+n8n-webhook
+```
+
 
 ## Authors
 

@@ -67,60 +67,31 @@ Voila! Your Plone site should be live and kicking!
 ## Intake add-on
 
 The STEP/CSTEP application intake lives in a separate add-on,
-[Lenfried/c-step-intake](https://github.com/Lenfried/c-step-intake) (Python package `c_step_intake`).
-This project consumes it as follows:
+[Lenfried/c-step-intake](https://github.com/Lenfried/c-step-intake) (Python package `c_step_intake`),
+checked out at `backend/sources/c-step-intake-core`. That folder is gitignored, so the add-on's code is not in this repository.
+[The intake add-on](./docs/docs/concepts/intake-add-on.md) explains how it is wired in and why.
 
-- **Checkout:** `backend/sources/c-step-intake-core`, on the add-on's `master` branch.
-  `backend/sources/` is gitignored, so the add-on is not part of this repository
-  (see [Why `backend/sources/` is gitignored](#why-backendsources-is-gitignored)).
-- **Wiring:** [`backend/mx.ini`](./backend/mx.ini) registers it with mxdev (`vcs = fs`), and
-  [`backend/pyproject.toml`](./backend/pyproject.toml) installs it in editable mode.
-  The distribution is named `c-step-intake-core`, not `c-step-intake`, because Python treats
-  `c-step-intake` and this project's `c.step.intake` as the same name.
-- **Loading:** [`dependencies.zcml`](./backend/src/c/step/intake/dependencies.zcml) includes its ZCML, and
-  [`metadata.xml`](./backend/src/c/step/intake/profiles/default/metadata.xml) installs `profile-c_step_intake:default` with this project's profile.
-- **Volto:** the add-on's `frontend/` folder is the Volto add-on `volto-c-step-intake-core`.
-  [`frontend/pnpm-workspace.yaml`](./frontend/pnpm-workspace.yaml) includes it from the same checkout.
-  It is a dependency in [`frontend/package.json`](./frontend/package.json), where Volto's add-on registry resolves it.
-  It is also listed under `addons` in [`volto-c-step-intake`](./frontend/packages/volto-c-step-intake/package.json).
-  After cloning the add-on, run `make frontend-install` (or `pnpm install` in `frontend`) so the package is linked.
+> **Warning:** CI and the Docker image builds currently fail, because a fresh clone has no add-on checkout.
+> `make build-images`, `make stack-create-site` and `make stack-start` do not work yet.
+> See [Docker images and CI status](./docs/docs/reference/docker-and-ci-status.md) for the cause and the fix.
 
 ### What the add-on does
 
 - **Content types:** STEP and CSTEP applications, with a review workflow. CSTEP is off by default.
-- **Single-page forms** and the staff **eligibility panel** (both below).
+- **Single-page forms:** every form section on one page instead of tabs ([details](./docs/docs/concepts/intake-add-on.md#single-page-application-forms)).
+- **Eligibility panel:** staff see each submission checked against the STEP criteria ([details](./docs/docs/concepts/intake-add-on.md#eligibility-panel)).
 - **School pick-list:** the STEP school is chosen from 1,998 NYSED secondary schools and stored in
   NYSED reporting format, `NAME  (COUNTY) BEDSCODE`. A "My school isn't listed" choice lets applicants type the name instead;
   staff should correct those before accepting, since they aren't in reporting format.
 - **STEP acceptance criteria:** the form collects every condition, including a STEM statement and
   "ward of the State or a county". Each submission is checked against them for staff; nothing is accepted or rejected automatically.
 - **Pre-filled fields:** name and email (and CSTEP's EMPLID, where the login provides it) start filled in from the applicant's account.
-- **New-application email** to staff (below).
+- **New-application email** to staff: [Set up the new-application email](./docs/docs/how-to-guides/new-application-email.md).
 - **Staff-decision webhook:** accept, reject and request-more-information decisions are posted to n8n,
-  which emails the student (below).
+  which emails the student: [Set up the staff-decision webhook to n8n](./docs/docs/how-to-guides/n8n-webhook.md).
 
+To submit and decide a test application, see [Try the application intake in Plone](./docs/docs/how-to-guides/try-it-in-plone.md).
 The add-on's own README and its `docs/` folder have the details.
-
-### Single-page application forms
-
-STEP and CSTEP add and edit forms show every section on one page, each under its own heading, instead of as tabs.
-Two parts of the add-on do this:
-
-- **Classic UI (:8080):** the add-on's `browser/forms.py` turns form tabbing off.
-- **Volto (:3000):** Volto ignores that setting. It builds forms from the `@types` schema and draws tabs whenever
-  there is more than one fieldset. `volto-c-step-intake-core` merges the fieldsets of these two types into one
-  as the schema arrives, adding a heading field for each section. The backend schema is unchanged.
-
-Other content types keep their tabs. The list of types is `config.settings.cStepIntakeSinglePageFormTypes`.
-
-### Eligibility panel
-
-Program staff (Manager, Site Administrator, ProgramDirector, ProgramStaff) see an **Eligibility check** panel
-at the top of each submitted application in Volto. It summarises the latest automatic check:
-each STEP acceptance condition as met / not met / undetermined, using the 2026-2027 NYSED income limits,
-plus an overall conclusion and any missing answers. It never decides an application: every submission goes to staff review.
-Applicants, and drafts, show no panel. The data comes from the add-on's `GET <application>/@eligibility` endpoint.
-See the add-on's `docs/eligibility_rules.md` for the criteria.
 
 ### Update the add-on
 
@@ -156,154 +127,9 @@ Run the Volto add-on's tests from `frontend`:
 pnpm --filter volto-c-step-intake-core exec vitest run
 ```
 
-### Try it in Plone
-
-1.  To start from a clean site, recreate it. This deletes all content.
-
-    ```shell
-    cd backend
-    DELETE_EXISTING=1 make create-site
-    ```
-
-2.  Start the backend and frontend as described above, and log in as `admin` / `admin`.
-3.  Add a **STEP Application** and click **Submit**. The automatic check runs, and the application moves to **Manual review**,
-    where the eligibility panel shows the result. Every submission goes there, eligible or not.
-4.  Accept, reject, or request more information as an admin, or as a user with the `ProgramDirector` role.
-    Users with the `ProgramStaff` role can review applications but cannot decide them.
-
-CSTEP is off by default. To turn it on, open `portal_setup` at http://localhost:8080/Plone/portal_setup,
-go to the **Import** tab, and import the profile "c_step_intake: CSTEP applications".
-
-### New-application email
-
-The add-on sends one email when an application is **first submitted**.
-Saving drafts, resubmitting, and staff transitions do not send one
-(staff decisions go to n8n instead; see [Staff-decision webhook to n8n](#staff-decision-webhook-to-n8n)).
-The recipient is the registry record `c_step_intake.notification_email`.
-Its default is `cstep-n8n@mailings.york.cuny.edu`; leave it empty to turn notifications off.
-Change it at http://localhost:8080/Plone/portal_registry (filter on `c_step_intake`).
-Volto's control panel does not include the registry editor.
-
-Plone needs both an SMTP server and a site "From" address.
-If either is missing, the send fails. The submission still goes through, and the error appears only in the backend log.
-
-For local development, catch mail with [Mailpit](https://mailpit.axllent.org/) (a standalone binary, not a Python package):
-
-```shell
-mailpit --smtp 127.0.0.1:1025 --listen 127.0.0.1:8025
-```
-
-In **Site Setup → Mail** (http://localhost:8080/Plone/@@mail-controlpanel), set:
-
-- **SMTP server:** `localhost`
-- **Port:** `1025`
-- **Site 'From' address:** any address, for example `noreply@example.com`
-
-Messages then appear at http://localhost:8025 instead of being delivered.
-
-### Staff-decision webhook to n8n
-
-When staff **accept**, **reject**, or **request more information** on an application in **Manual review**,
-the add-on posts an event to an n8n webhook, and the n8n workflow emails the student.
-The automatic check's own transitions are not posted, only human decisions.
-The event carries no applicant details; n8n looks the student up through the REST API.
-It is sent after the change is saved, and if n8n is down the decision still goes through and the error is logged.
-The add-on's README has the payload format.
-
-Three pieces have to agree:
-
-| Piece | Where | Value |
-|---|---|---|
-| Webhook URL | Plone registry record `c_step_intake.n8n_webhook_url` | The n8n workflow's **production** webhook URL. Empty turns the webhook off. |
-| Shared secret (Plone) | Environment variable `C_STEP_INTAKE_N8N_WEBHOOK_TOKEN` on the backend | A random token, for example from `openssl rand -hex 32` |
-| Shared secret (n8n) | n8n Header Auth credential | Header name `X-STEP-Token`, same token as above |
-
-The token is never committed. Where it is set:
-
-- **Docker Compose:** [`docker-compose.yml`](./docker-compose.yml) and
-  [`devops/stacks/c-step-intake.example.com.yml`](./devops/stacks/c-step-intake.example.com.yml) pass the variable
-  to the backend container. Locally, its value comes from a `.env` file next to `docker-compose.yml`, which is git-ignored.
-- **Backend without Docker:** `make backend-start` does not read `.env`. Load it first:
-
-  ```shell
-  set -a; source .env; set +a
-  make backend-start
-  ```
-
-- **GitHub Actions:** the repository has an Actions secret `C_STEP_INTAKE_N8N_WEBHOOK_TOKEN`.
-  No workflow deploys yet, so nothing uses it; a future deploy job would pass it to `docker stack deploy`.
-
-**The n8n workflow** is in [`n8n/application-decision-workflow.json`](./n8n/application-decision-workflow.json).
-Import it with **Workflows → Import from File**, then:
-
-1. Create three credentials and select them on the nodes: **Plone webhook token** (Header Auth, as above),
-   **Plone service account** (Basic Auth, a Plone user that can only view applications), and **SMTP account**.
-2. Set the Plone address in **Fetch application from Plone** (it ships as `http://localhost:8080/Plone`)
-   and the sender address in the three email nodes.
-3. Test it, activate it, and copy its production webhook URL into the registry record above.
-
-**Turning it on for an existing site:** run the add-on's **1001 upgrade step** in Site Setup → Add-ons,
-which adds the registry record, then set the three pieces above.
-
-**Network:** the Plone backend must be able to reach n8n, and n8n must be able to reach Plone's REST API.
-The current n8n instance is only reachable over VPN.
-
-**Handing off:** give the token through a password manager, not email or chat, or have the new owner
-generate a fresh one and set it in both places.
-
-### Why `backend/sources/` is gitignored
-
-`/sources/` is ignored by the Cookieplone project template, not by a choice made here.
-It is where mxdev puts packages listed in `mx.ini` that come from somewhere other than PyPI.
-Each of those is a separate git repository with its own history and its own owners,
-so this repository records **which** package to use (in `mx.ini`), not a copy of its code.
-Committing the folder would duplicate the add-on's code here, and git cannot track a folder
-that contains its own `.git` as ordinary files.
-
-That works when `mx.ini` tells mxdev where to get the package. Here it doesn't:
-the entry uses `vcs = fs`, which means "the package is already on disk, don't fetch it".
-So the only thing that puts the add-on in `backend/sources/` is the manual clone in
-[Installation](#installation), step 2.
-
-### Why the Docker images and CI don't build
-
-Anything that starts from a fresh clone of this repository has no `backend/sources/`, so it has no add-on.
-
-- **CI:** every backend job has failed since the add-on was wired in (2026-10-19).
-  They stop at the same step:
-  `Directory 'sources/c-step-intake-core' for package 'c-step-intake-core' doesn't exist.`
-  The image-build job never runs, because the backend jobs fail first.
-- **Backend image** (`backend/Dockerfile`): the build runs `mxdev -c mx.ini`, then `uv sync`,
-  both of which need `sources/c-step-intake-core`. On a fresh clone it fails the same way as CI.
-  On a machine that has the checkout it can succeed, because the build context is `backend/`
-  and `backend/.dockerignore` does not exclude `sources/`; the image then contains whatever
-  branch that checkout happens to be on.
-- **Frontend image** (`frontend/Dockerfile`): fails everywhere, including on a machine with the checkout.
-  The Volto add-on is linked from `../backend/sources/c-step-intake-core/frontend`, outside the
-  `frontend/` build context, and the Dockerfile copies only `packages/volto-c-step-intake` and the
-  workspace files. `pnpm install` then cannot find the `volto-c-step-intake-core` dependency.
-
-**How to fix it** (not done yet):
-
-1. **Backend:** change the `mx.ini` entry from `vcs = fs` to a git source, as in the commented examples in that file:
-
-   ```ini
-   [c-step-intake-core]
-   url = https://github.com/Lenfried/c-step-intake.git
-   branch = master
-   ```
-
-   mxdev then clones the add-on into `sources/` during `make install`, CI and the image build,
-   and the manual clone step goes away.
-2. **Frontend:** the image build must get the Volto add-on into the `frontend/` build context,
-   either by fetching it during the build (for example cloning the add-on repository and copying its `frontend/` folder
-   into `packages/`) or by publishing `volto-c-step-intake-core` to npm and depending on a version.
-   Local development can keep the link to the backend checkout.
-
-Until then, `make build-images`, `make stack-create-site` and `make stack-start` below do not work:
-the frontend image cannot build on any machine, and the backend image cannot build from a fresh clone.
-
 ### Local Stack Deployment
+
+> **Note:** this does not work yet; see the warning under [Intake add-on](#intake-add-on).
 
 Deploy a local Docker Compose environment that includes the following.
 
@@ -319,6 +145,16 @@ make stack-start
 ```
 
 And... you're all set! Your Plone site is up and running locally!
+
+## Documentation
+
+More documentation is in [`docs/docs/`](./docs/docs/):
+
+- [The intake add-on](./docs/docs/concepts/intake-add-on.md): how it is wired in, forms, eligibility panel
+- [Try the application intake in Plone](./docs/docs/how-to-guides/try-it-in-plone.md)
+- [Set up the new-application email](./docs/docs/how-to-guides/new-application-email.md)
+- [Set up the staff-decision webhook to n8n](./docs/docs/how-to-guides/n8n-webhook.md)
+- [Docker images and CI status](./docs/docs/reference/docker-and-ci-status.md)
 
 ## Project structure
 
@@ -356,9 +192,9 @@ make format
 | --- | --- | --- | --- |
 | backend | Ruff | Python code formatting, imports sorting  | [`backend/pyproject.toml`](./backend/pyproject.toml) |
 | backend | `zpretty` | XML and ZCML formatting  | -- |
-| frontend | ESLint | Fixes most common frontend issues | [`frontend/.eslintrc.js`](.frontend/.eslintrc.js) |
-| frontend | prettier | Format JS and Typescript code  | [`frontend/.prettierrc`](.frontend/.prettierrc) |
-| frontend | Stylelint | Format Styles (css, less, sass)  | [`frontend/.stylelintrc`](.frontend/.stylelintrc) |
+| frontend | ESLint | Fixes most common frontend issues | [`frontend/.eslintrc.js`](./frontend/.eslintrc.js) |
+| frontend | prettier | Format JS and Typescript code  | [`frontend/.prettierrc`](./frontend/.prettierrc) |
+| frontend | Stylelint | Format Styles (css, less, sass)  | [`frontend/.stylelintrc`](./frontend/.stylelintrc) |
 
 Formatters can also be run within the `backend` or `frontend` folders.
 
@@ -375,9 +211,9 @@ make lint
 | backend | Pyroma | Checks Python package metadata  | -- |
 | backend | check-python-versions | Checks Python version information  | -- |
 | backend | `zpretty` | Checks XML and ZCML formatting  | -- |
-| frontend | ESLint | Checks JS / Typescript lint | [`frontend/.eslintrc.js`](.frontend/.eslintrc.js) |
-| frontend | prettier | Check JS / Typescript formatting  | [`frontend/.prettierrc`](.frontend/.prettierrc) |
-| frontend | Stylelint | Check Styles (css, less, sass) formatting  | [`frontend/.stylelintrc`](.stylelintrc) |
+| frontend | ESLint | Checks JS / Typescript lint | [`frontend/.eslintrc.js`](./frontend/.eslintrc.js) |
+| frontend | prettier | Check JS / Typescript formatting  | [`frontend/.prettierrc`](./frontend/.prettierrc) |
+| frontend | Stylelint | Check Styles (css, less, sass) formatting  | [`frontend/.stylelintrc`](./frontend/.stylelintrc) |
 
 Linters can be run individually within the `backend` or `frontend` folders.
 
