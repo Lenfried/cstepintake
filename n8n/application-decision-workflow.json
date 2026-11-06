@@ -1,0 +1,212 @@
+{
+  "name": "Plone application decision -> notify student",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "plone-application-decision",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "0b6a8f3e-1c1d-4a52-9d1e-7f0c2a6b1001",
+      "name": "Plone decision webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "5f3c2d8e-8b47-4c1a-a0f6-2e9d7b4c1001",
+      "credentials": {
+        "httpHeaderAuth": { "id": null, "name": "Plone webhook token" }
+      }
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8080/Plone/@search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "UID", "value": "={{ $json.body.uid }}" },
+            { "name": "fullobjects", "value": "1" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Accept", "value": "application/json" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0b6a8f3e-1c1d-4a52-9d1e-7f0c2a6b1002",
+      "name": "Fetch application from Plone",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0],
+      "credentials": {
+        "httpBasicAuth": { "id": null, "name": "Plone service account" }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine the webhook payload with the applicant record fetched from Plone.\nconst hook = $('Plone decision webhook').first().json.body;\nconst result = $input.first().json;\nconst app = (result.items || [])[0];\n\nif (!app) {\n  throw new Error(`No application found in Plone for UID ${hook.uid}`);\n}\nif (!app.student_email) {\n  throw new Error(`Application ${hook.uid} has no student_email`);\n}\n\nreturn [{\n  json: {\n    event: hook.event,\n    uid: hook.uid,\n    url: hook.url,\n    program: String(hook.program || '').toUpperCase(),\n    comment: hook.comment || '',\n    actor: hook.actor,\n    to: app.student_email,\n    first_name: app.first_name || 'Student',\n  },\n}];"
+      },
+      "id": "0b6a8f3e-1c1d-4a52-9d1e-7f0c2a6b1003",
+      "name": "Build message data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 0]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+                "conditions": [
+                  {
+                    "id": "c1",
+                    "leftValue": "={{ $json.event }}",
+                    "rightValue": "application.accept",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "accepted"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+                "conditions": [
+                  {
+                    "id": "c2",
+                    "leftValue": "={{ $json.event }}",
+                    "rightValue": "application.reject",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "rejected"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+                "conditions": [
+                  {
+                    "id": "c3",
+                    "leftValue": "={{ $json.event }}",
+                    "rightValue": "application.request_info",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "more info"
+            }
+          ]
+        },
+        "options": { "fallbackOutput": "extra" }
+      },
+      "id": "0b6a8f3e-1c1d-4a52-9d1e-7f0c2a6b1004",
+      "name": "Route by decision",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [720, 0]
+    },
+    {
+      "parameters": {
+        "fromEmail": "cstep@york.cuny.edu",
+        "toEmail": "={{ $json.to }}",
+        "subject": "={{ $json.program }} application: accepted",
+        "emailFormat": "text",
+        "text": "=Dear {{ $json.first_name }},\n\nCongratulations! Your {{ $json.program }} application has been accepted.\n\nYou can view your application here: {{ $json.url }}\n\n{{ $json.comment ? 'Note from the program: ' + $json.comment + '\\n\\n' : '' }}The {{ $json.program }} team",
+        "options": {}
+      },
+      "id": "0b6a8f3e-1c1d-4a52-9d1e-7f0c2a6b1005",
+      "name": "Email: accepted",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [980, -200],
+      "credentials": {
+        "smtp": { "id": null, "name": "SMTP account" }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "cstep@york.cuny.edu",
+        "toEmail": "={{ $json.to }}",
+        "subject": "={{ $json.program }} application: decision",
+        "emailFormat": "text",
+        "text": "=Dear {{ $json.first_name }},\n\nThank you for applying to {{ $json.program }}. After review, we are unable to accept your application at this time.\n\n{{ $json.comment ? 'Note from the program: ' + $json.comment + '\\n\\n' : '' }}If you have questions, please reply to this email.\n\nThe {{ $json.program }} team",
+        "options": {}
+      },
+      "id": "0b6a8f3e-1c1d-4a52-9d1e-7f0c2a6b1006",
+      "name": "Email: rejected",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [980, 0],
+      "credentials": {
+        "smtp": { "id": null, "name": "SMTP account" }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "cstep@york.cuny.edu",
+        "toEmail": "={{ $json.to }}",
+        "subject": "={{ $json.program }} application: more information needed",
+        "emailFormat": "text",
+        "text": "=Dear {{ $json.first_name }},\n\nWe need more information before we can finish reviewing your {{ $json.program }} application.\n\n{{ $json.comment ? 'What we need: ' + $json.comment + '\\n\\n' : '' }}Please update and resubmit your application here: {{ $json.url }}\n\nThe {{ $json.program }} team",
+        "options": {}
+      },
+      "id": "0b6a8f3e-1c1d-4a52-9d1e-7f0c2a6b1007",
+      "name": "Email: more info needed",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [980, 200],
+      "credentials": {
+        "smtp": { "id": null, "name": "SMTP account" }
+      }
+    },
+    {
+      "parameters": {
+        "errorMessage": "={{ 'Unknown decision event from Plone: ' + $json.event }}"
+      },
+      "id": "0b6a8f3e-1c1d-4a52-9d1e-7f0c2a6b1008",
+      "name": "Unknown event",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [980, 400]
+    }
+  ],
+  "connections": {
+    "Plone decision webhook": {
+      "main": [[{ "node": "Fetch application from Plone", "type": "main", "index": 0 }]]
+    },
+    "Fetch application from Plone": {
+      "main": [[{ "node": "Build message data", "type": "main", "index": 0 }]]
+    },
+    "Build message data": {
+      "main": [[{ "node": "Route by decision", "type": "main", "index": 0 }]]
+    },
+    "Route by decision": {
+      "main": [
+        [{ "node": "Email: accepted", "type": "main", "index": 0 }],
+        [{ "node": "Email: rejected", "type": "main", "index": 0 }],
+        [{ "node": "Email: more info needed", "type": "main", "index": 0 }],
+        [{ "node": "Unknown event", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "pinData": {}
+}
