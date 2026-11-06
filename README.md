@@ -1,4 +1,4 @@
-# c-step-intake 🚀
+# c-step-intake
 
 [![Built with Cookieplone](https://img.shields.io/badge/built%20with-Cookieplone-0083be.svg?logo=cookiecutter)](https://github.com/plone/cookieplone-templates/)
 [![Black code style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
@@ -6,9 +6,9 @@
 
 A new project using Plone 6.
 
-## Quick Start 🏁
+## Quick Start
 
-### Prerequisites ✅
+### Prerequisites
 
 -   An [operating system](https://6.docs.plone.org/install/create-project-cookieplone.html#prerequisites-for-installation) that runs all the requirements mentioned.
 -   [uv](https://6.docs.plone.org/install/create-project-cookieplone.html#uv)
@@ -19,7 +19,7 @@ A new project using Plone 6.
 -   [Docker](https://docs.docker.com/get-started/get-docker/) (optional)
 
 
-### Installation 🔧
+### Installation
 
 1.  Clone this repository, then change your working directory.
 
@@ -28,7 +28,7 @@ A new project using Plone 6.
     cd c-step-intake
     ```
 
-2.  Check out the intake add-on into `backend/sources` (see [Intake add-on](#intake-add-on-)).
+2.  Check out the intake add-on into `backend/sources` (see [Intake add-on](#intake-add-on)).
     This step is manual: nothing else fetches the add-on.
 
     ```shell
@@ -42,7 +42,7 @@ A new project using Plone 6.
     ```
 
 
-### Fire Up the Servers 🔥
+### Fire Up the Servers
 
 1.  Create a new Plone site on your first run.
 
@@ -62,9 +62,9 @@ A new project using Plone 6.
     make frontend-start
     ```
 
-Voila! Your Plone site should be live and kicking! 🎉
+Voila! Your Plone site should be live and kicking!
 
-## Intake add-on 📝
+## Intake add-on
 
 The STEP/CSTEP application intake lives in a separate add-on,
 [Lenfried/c-step-intake](https://github.com/Lenfried/c-step-intake) (Python package `c_step_intake`).
@@ -178,7 +178,7 @@ go to the **Import** tab, and import the profile "c_step_intake: CSTEP applicati
 
 The add-on sends one email when an application is **first submitted**.
 Saving drafts, resubmitting, and staff transitions do not send one
-(staff decisions go to n8n instead; see [Staff-decision webhook to n8n](#staff-decision-webhook-to-n8n-)).
+(staff decisions go to n8n instead; see [Staff-decision webhook to n8n](#staff-decision-webhook-to-n8n)).
 The recipient is the registry record `c_step_intake.notification_email`.
 Its default is `cstep-n8n@mailings.york.cuny.edu`; leave it empty to turn notifications off.
 Change it at http://localhost:8080/Plone/portal_registry (filter on `c_step_intake`).
@@ -201,7 +201,7 @@ In **Site Setup → Mail** (http://localhost:8080/Plone/@@mail-controlpanel), se
 
 Messages then appear at http://localhost:8025 instead of being delivered.
 
-### Staff-decision webhook to n8n 🔔
+### Staff-decision webhook to n8n
 
 When staff **accept**, **reject**, or **request more information** on an application in **Manual review**,
 the add-on posts an event to an n8n webhook, and the n8n workflow emails the student.
@@ -263,9 +263,9 @@ that contains its own `.git` as ordinary files.
 That works when `mx.ini` tells mxdev where to get the package. Here it doesn't:
 the entry uses `vcs = fs`, which means "the package is already on disk, don't fetch it".
 So the only thing that puts the add-on in `backend/sources/` is the manual clone in
-[Installation](#installation-), step 2.
+[Installation](#installation), step 2.
 
-### Why the Docker images and CI don't build ⚠️
+### Why the Docker images and CI don't build
 
 Anything that starts from a fresh clone of this repository has no `backend/sources/`, so it has no add-on.
 
@@ -303,13 +303,13 @@ Anything that starts from a fresh clone of this repository has no `backend/sourc
 Until then, `make build-images`, `make stack-create-site` and `make stack-start` below do not work:
 the frontend image cannot build on any machine, and the backend image cannot build from a fresh clone.
 
-### Local Stack Deployment 📦
+### Local Stack Deployment
 
 Deploy a local Docker Compose environment that includes the following.
 
-- Docker images for Backend and Frontend 🖼️
-- A stack with a Traefik router and a PostgreSQL database 🗃️
-- Accessible at [http://c-step-intake.localhost](http://c-step-intake.localhost) 🌐
+- Docker images for Backend and Frontend
+- A stack with a Traefik router and a PostgreSQL database
+- Accessible at [http://c-step-intake.localhost](http://c-step-intake.localhost)
 
 Run the following commands in a shell session.
 
@@ -318,9 +318,9 @@ make stack-create-site
 make stack-start
 ```
 
-And... you're all set! Your Plone site is up and running locally! 🚀
+And... you're all set! Your Plone site is up and running locally!
 
-## Project structure 🏗️
+## Project structure
 
 This monorepo consists of the following distinct sections:
 
@@ -329,14 +329,14 @@ This monorepo consists of the following distinct sections:
 - **devops**: Encompasses Docker stack, Ansible playbooks, and cache settings.
 - **docs**: Scaffold for writing documentation for your project.
 
-### Why this structure? 🤔
+### Why this structure?
 
 - All necessary codebases to run the site are contained within the repository (excluding existing add-ons for Plone and React).
 - Specific GitHub Workflows are triggered based on changes in each codebase (refer to .github/workflows).
 - Simplifies the creation of Docker images for each codebase.
 - Demonstrates Plone installation/setup without buildout.
 
-## Code quality assurance 🧐
+## Code quality assurance
 
 To check your code against quality standards, run the following shell command.
 
@@ -382,7 +382,7 @@ make lint
 Linters can be run individually within the `backend` or `frontend` folders.
 
 
-## Internationalization 🌐
+## Internationalization
 
 Generate translation files for Plone and Volto with ease:
 
@@ -390,6 +390,6 @@ Generate translation files for Plone and Volto with ease:
 make i18n
 ```
 
-## Credits and acknowledgements 🙏
+## Credits and acknowledgements
 
 Generated using [Cookieplone (2.0.0)](https://github.com/plone/cookieplone) and [cookieplone-templates (db76a81)](https://github.com/plone/cookieplone-templates/commit/db76a81d89db7ed23d6873e5323bdbfc63cd6197) on 2026-09-26 18:54:55.210360. A special thanks to all contributors and supporters!
