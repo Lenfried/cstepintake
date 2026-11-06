@@ -96,6 +96,8 @@ This project consumes it as follows:
   "ward of the State or a county". Each submission is checked against them for staff; nothing is accepted or rejected automatically.
 - **Pre-filled fields:** name and email (and CSTEP's EMPLID, where the login provides it) start filled in from the applicant's account.
 - **New-application email** to staff (below).
+- **Staff-decision webhook:** accept, reject and request-more-information decisions are posted to n8n,
+  which emails the student (below).
 
 The add-on's own README and its `docs/` folder have the details.
 
@@ -135,6 +137,8 @@ Everything this project needs is in `master`, so no project-specific branch is k
 
 Code changes take effect without reinstalling. If upstream adds GenericSetup files, such as a new
 `registry.xml`, existing sites need that import step re-run in `portal_setup`, or the site recreated.
+When the add-on ships an upgrade step (the profile version in its `metadata.xml` goes up, as with 1001 for the n8n webhook),
+run it from Site Setup → Add-ons instead.
 
 ### Test the add-on
 
@@ -173,7 +177,8 @@ go to the **Import** tab, and import the profile "c_step_intake: CSTEP applicati
 ### New-application email
 
 The add-on sends one email when an application is **first submitted**.
-Saving drafts, resubmitting, and staff transitions do not send one.
+Saving drafts, resubmitting, and staff transitions do not send one
+(staff decisions go to n8n instead; see [Staff-decision webhook to n8n](#staff-decision-webhook-to-n8n-)).
 The recipient is the registry record `c_step_intake.notification_email`.
 Its default is `cstep-n8n@mailings.york.cuny.edu`; leave it empty to turn notifications off.
 Change it at http://localhost:8080/Plone/portal_registry (filter on `c_step_intake`).
@@ -195,6 +200,56 @@ In **Site Setup → Mail** (http://localhost:8080/Plone/@@mail-controlpanel), se
 - **Site 'From' address:** any address, for example `noreply@example.com`
 
 Messages then appear at http://localhost:8025 instead of being delivered.
+
+### Staff-decision webhook to n8n 🔔
+
+When staff **accept**, **reject**, or **request more information** on an application in **Manual review**,
+the add-on posts an event to an n8n webhook, and the n8n workflow emails the student.
+The automatic check's own transitions are not posted, only human decisions.
+The event carries no applicant details; n8n looks the student up through the REST API.
+It is sent after the change is saved, and if n8n is down the decision still goes through and the error is logged.
+The add-on's README has the payload format.
+
+Three pieces have to agree:
+
+| Piece | Where | Value |
+|---|---|---|
+| Webhook URL | Plone registry record `c_step_intake.n8n_webhook_url` | The n8n workflow's **production** webhook URL. Empty turns the webhook off. |
+| Shared secret (Plone) | Environment variable `C_STEP_INTAKE_N8N_WEBHOOK_TOKEN` on the backend | A random token, for example from `openssl rand -hex 32` |
+| Shared secret (n8n) | n8n Header Auth credential | Header name `X-STEP-Token`, same token as above |
+
+The token is never committed. Where it is set:
+
+- **Docker Compose:** [`docker-compose.yml`](./docker-compose.yml) and
+  [`devops/stacks/c-step-intake.example.com.yml`](./devops/stacks/c-step-intake.example.com.yml) pass the variable
+  to the backend container. Locally, its value comes from a `.env` file next to `docker-compose.yml`, which is git-ignored.
+- **Backend without Docker:** `make backend-start` does not read `.env`. Load it first:
+
+  ```shell
+  set -a; source .env; set +a
+  make backend-start
+  ```
+
+- **GitHub Actions:** the repository has an Actions secret `C_STEP_INTAKE_N8N_WEBHOOK_TOKEN`.
+  No workflow deploys yet, so nothing uses it; a future deploy job would pass it to `docker stack deploy`.
+
+**The n8n workflow** is in [`n8n/application-decision-workflow.json`](./n8n/application-decision-workflow.json).
+Import it with **Workflows → Import from File**, then:
+
+1. Create three credentials and select them on the nodes: **Plone webhook token** (Header Auth, as above),
+   **Plone service account** (Basic Auth, a Plone user that can only view applications), and **SMTP account**.
+2. Set the Plone address in **Fetch application from Plone** (it ships as `http://localhost:8080/Plone`)
+   and the sender address in the three email nodes.
+3. Test it, activate it, and copy its production webhook URL into the registry record above.
+
+**Turning it on for an existing site:** run the add-on's **1001 upgrade step** in Site Setup → Add-ons,
+which adds the registry record, then set the three pieces above.
+
+**Network:** the Plone backend must be able to reach n8n, and n8n must be able to reach Plone's REST API.
+The current n8n instance is only reachable over VPN.
+
+**Handing off:** give the token through a password manager, not email or chat, or have the new owner
+generate a fresh one and set it in both places.
 
 ### Why `backend/sources/` is gitignored
 
