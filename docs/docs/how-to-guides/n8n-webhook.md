@@ -9,8 +9,9 @@ myst:
 
 # Set up the staff-decision webhook to n8n
 
-When staff **accept**, **reject**, or **request more information** on an application in **Manual review**,
-the add-on posts an event to an n8n webhook, and the n8n workflow emails the student.
+When staff **accept**, **reject**, or **request more information** on an application
+(from **Manual review**, or rejecting one that is waiting for more information),
+the add-on posts an event to an n8n webhook, and the n8n workflow emails the student and then staff (`cstep-n8n@mailings.york.cuny.edu`, set in the **Email: notify staff** node).
 The automatic check's own transitions are not posted, only human decisions.
 The event carries no applicant details; n8n looks the student up through the REST API.
 It is sent after the change is saved, and if n8n is down the decision still goes through and the error is logged.
@@ -50,9 +51,12 @@ The workflow is in [`n8n/application-decision-workflow.json`](https://github.com
 Import it with **Workflows → Import from File**, then:
 
 1. Create three credentials and select them on the nodes: **Plone webhook token** (Header Auth, as above),
-   **Plone service account** (Basic Auth, a Plone user that can only view applications), and **SMTP account**.
+   **Plone service account** (Basic Auth), and **SMTP account**.
+   The service account must be able to view applications in every state. The narrowest Plone role that can
+   is `ProgramStaff`, which can also request more information and flag applications for review,
+   so create a dedicated user for n8n and keep its password only in n8n.
 2. Set the Plone address in **Fetch application from Plone** (it ships as `http://localhost:8080/Plone`)
-   and the sender address in the three email nodes.
+   and the sender address in the four email nodes (and the staff address in **Email: notify staff**, if it changes).
 3. Test it, activate it, and copy its production webhook URL into the registry record above.
 
 ## Turn it on for an existing site

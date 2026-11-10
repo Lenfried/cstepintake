@@ -88,7 +88,7 @@ checked out at `backend/sources/c-step-intake-core`. That folder is gitignored, 
 - **Pre-filled fields:** name and email (and CSTEP's EMPLID, where the login provides it) start filled in from the applicant's account.
 - **New-application email** to staff: [Set up the new-application email](./docs/docs/how-to-guides/new-application-email.md).
 - **Staff-decision webhook:** accept, reject and request-more-information decisions are posted to n8n,
-  which emails the student: [Set up the staff-decision webhook to n8n](./docs/docs/how-to-guides/n8n-webhook.md).
+  which emails the student and staff: [Set up the staff-decision webhook to n8n](./docs/docs/how-to-guides/n8n-webhook.md).
 
 To submit and decide a test application, see [Try the application intake in Plone](./docs/docs/how-to-guides/try-it-in-plone.md).
 The add-on's own README and its `docs/` folder have the details.
