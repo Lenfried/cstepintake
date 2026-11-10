@@ -20,7 +20,7 @@ myst:
 3.  Add a **STEP Application** and click **Submit**. The automatic check runs, and the application moves to **Manual review**,
     where the eligibility panel shows the result. Every submission goes there, eligible or not.
 4.  Accept, reject, or request more information as an admin, or as a user with the `ProgramDirector` role.
-    Users with the `ProgramStaff` role can review applications but cannot decide them.
+    Users with the `ProgramStaff` role can review applications and request more information, but cannot accept or reject them.
     If the [n8n webhook](n8n-webhook.md) is configured, each of these decisions is posted to n8n.
 
 ## Turn on CSTEP
